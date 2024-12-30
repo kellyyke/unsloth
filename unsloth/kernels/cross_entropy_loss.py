@@ -25,11 +25,11 @@ from unsloth_zoo.loss_utils import (
 )
 
 
-@triton.heuristics({
-    "DO_SOFTCAPPING":   lambda args: bool(args["DO_SOFTCAPPING"  ]),
-    "DO_LOGIT_SCALING": lambda args: bool(args["DO_LOGIT_SCALING"]),
-})
-@triton.jit
+# @triton.heuristics({
+#     "DO_SOFTCAPPING":   lambda args: bool(args["DO_SOFTCAPPING"  ]),
+#     "DO_LOGIT_SCALING": lambda args: bool(args["DO_LOGIT_SCALING"]),
+# })
+# @triton.jit
 def _cross_entropy_forward(
     logits_ptr        ,
     logits_row_stride ,
@@ -94,14 +94,23 @@ def _cross_entropy_forward(
         loss = 0.0
     tl.store(logsumexp_ptr, logsumexp)
     tl.store(loss_ptr, loss)
+
+_cross_entropy_forward = triton.jit(_cross_entropy_forward)
+_cross_entropy_forward = triton.heuristics(  # type: ignore
+    {
+        "DO_SOFTCAPPING":   lambda args: bool(args["DO_SOFTCAPPING"  ]),
+        "DO_LOGIT_SCALING": lambda args: bool(args["DO_LOGIT_SCALING"]),
+    }
+)(_cross_entropy_forward)
+
 pass
 
 
-@triton.heuristics({
-    "DO_SOFTCAPPING":   lambda args: bool(args["DO_SOFTCAPPING"  ]),
-    "DO_LOGIT_SCALING": lambda args: bool(args["DO_LOGIT_SCALING"]),
-})
-@triton.jit
+# @triton.heuristics({
+#     "DO_SOFTCAPPING":   lambda args: bool(args["DO_SOFTCAPPING"  ]),
+#     "DO_LOGIT_SCALING": lambda args: bool(args["DO_LOGIT_SCALING"]),
+# })
+# @triton.jit
 def _chunked_cross_entropy_forward(
     logits_ptr        ,
     logits_row_stride ,
@@ -176,14 +185,23 @@ def _chunked_cross_entropy_forward(
         tl.store(loss_ptr, loss)
     pass
     tl.store(logsumexp_ptr, logsumexp)
+
+_chunked_cross_entropy_forward = triton.jit(_chunked_cross_entropy_forward)
+_chunked_cross_entropy_forward = triton.heuristics(  # type: ignore
+    {
+        "DO_SOFTCAPPING":   lambda args: bool(args["DO_SOFTCAPPING"  ]),
+        "DO_LOGIT_SCALING": lambda args: bool(args["DO_LOGIT_SCALING"]),
+    }
+)(_chunked_cross_entropy_forward)
+
 pass
 
 
-@triton.heuristics({
-    "DO_SOFTCAPPING":   lambda args: bool(args["DO_SOFTCAPPING"  ]),
-    "DO_LOGIT_SCALING": lambda args: bool(args["DO_LOGIT_SCALING"]),
-})
-@triton.jit
+# @triton.heuristics({
+#     "DO_SOFTCAPPING":   lambda args: bool(args["DO_SOFTCAPPING"  ]),
+#     "DO_LOGIT_SCALING": lambda args: bool(args["DO_LOGIT_SCALING"]),
+# })
+# @triton.jit
 def _cross_entropy_backward(
     logits_ptr        ,
     logits_row_stride ,
@@ -263,6 +281,15 @@ def _cross_entropy_backward(
 
     # If y == 0: dC/dx = 0 ==> we already masked it to be = 0, so dloss = 0.
     tl.store(logits_ptr + col_offsets, dloss * y, mask = mask)
+
+_cross_entropy_backward = triton.jit(_cross_entropy_backward)
+_cross_entropy_backward = triton.heuristics(  # type: ignore
+    {
+        "DO_SOFTCAPPING":   lambda args: bool(args["DO_SOFTCAPPING"  ]),
+        "DO_LOGIT_SCALING": lambda args: bool(args["DO_LOGIT_SCALING"]),
+    }
+)(_cross_entropy_backward)
+
 pass
 
 
